@@ -317,16 +317,14 @@
               </div>
             </div>
             <div className="controls">
-              {showSearch && (
-                <button
-                  type="button"
-                  className="linkish"
-                  onClick={() => setShowSearch((v) => !v)}
-                  aria-pressed={!showSearch}
-                >
-                  {showSearch ? "Hide search" : "Search city"}
-                </button>
-              )}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => setShowSearch((v) => !v)}
+                aria-pressed={showSearch}
+              >
+                {showSearch ? "Hide search" : "Search city"}
+              </button>
               <button
                 type="button"
                 className="primary"
@@ -375,28 +373,31 @@
               ) : status === "error" ? (
                 <div className="center">
                   <p>{message || "Something went wrong."}</p>
-                  <button onClick={() => {
-                    if (location) onRefresh();
-                    else if (canUseGeo) {
-                      setMessage("Requesting location permission…");
-                      setStatus("loading");
-                      navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                          const { latitude: lat, longitude: lon } = pos.coords;
-                          setSource("geo");
-                          fetchAll(lat, lon, null);
-                        },
-                        () => {
-                          setShowSearch(true);
-                          setStatus("idle");
-                          setMessage("Location failed. Try searching below.");
-                        }
-                      );
-                    } else {
-                      setShowSearch(true);
-                      setStatus("idle");
-                    }
-                  }}>Retry</button>
+                  <div className="row" style={{justifyContent:'center', gap: '8px'}}>
+                    <button onClick={() => {
+                      if (location) onRefresh();
+                      else if (canUseGeo) {
+                        setMessage("Requesting location permission…");
+                        setStatus("loading");
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            const { latitude: lat, longitude: lon } = pos.coords;
+                            setSource("geo");
+                            fetchAll(lat, lon, null);
+                          },
+                          () => {
+                            setShowSearch(true);
+                            setStatus("idle");
+                            setMessage("Location failed. Try searching below.");
+                          }
+                        );
+                      } else {
+                        setShowSearch(true);
+                        setStatus("idle");
+                      }
+                    }}>Retry</button>
+                    <button type="button" className="linkish" onClick={() => { setShowSearch(true); setStatus("idle"); }}>Search for a city</button>
+                  </div>
                 </div>
               ) : (
                 <div className="center">
@@ -456,4 +457,3 @@
   </script>
 </body>
 </html>
-
