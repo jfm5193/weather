@@ -197,7 +197,7 @@
         );
       }, []);
 
-      // Fetch weather + (reverse) geocoded name
+      // Fetch weather + (reverse) geocoded name (robust to geocoding CORS/outages)
       async function fetchAll(lat, lon, nameFromSearch) {
         const myId = ++reqIdRef.current;
         if (abortRef.current) abortRef.current.abort();
@@ -208,20 +208,27 @@
           setStatus("loading");
           setMessage("Fetching current weather…");
 
-          // Reverse geocode if we don't already have a name
-          let placeName = nameFromSearch || "";
-          if (!placeName) {
-            const rev = await fetch(
-              `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`,
-              { signal: ac.signal }
-            ).then(r => r.json());
-            placeName = (rev && rev.results && rev.results.length) ? formatPlace(rev.results[0]) : "";
-          }
+          // Start reverse geocoding in parallel but don't block weather on it
+          const reversePromise = (async () => {
+            if (nameFromSearch) return nameFromSearch;
+            try {
+              const r = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`,
+                { signal: ac.signal, mode: "cors", cache: "no-store" }
+              );
+              const j = await r.json();
+              return (j && j.results && j.results.length) ? formatPlace(j.results[0]) : "";
+            } catch {
+              return ""; // ignore reverse errors (CORS etc.)
+            }
+          })();
 
-          const wx = await fetch(
+          // Weather fetch (must succeed)
+          const wxResp = await fetch(
             `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,wind_speed_10m,weather_code&timezone=auto`,
-            { signal: ac.signal }
-          ).then(r => r.json());
+            { signal: ac.signal, mode: "cors", cache: "no-store" }
+          );
+          const wx = await wxResp.json();
 
           if (reqIdRef.current !== myId || !mountedRef.current) return; // stale
 
@@ -234,14 +241,16 @@
             time: cur.time ? new Date(cur.time) : new Date()
           };
 
-          setLocation({ lat, lon, name: placeName || "Your location" });
+          const placeName = (await reversePromise) || "Your location";
+
+          setLocation({ lat, lon, name: placeName });
           setWeather(data);
           setStatus("ready");
           setMessage("");
         } catch (e) {
           if (e.name === "AbortError") return;
           setStatus("error");
-          setMessage("Couldn't fetch weather. Check your connection and try again.");
+          setMessage("Couldn't fetch weather (network blocked?). Try again or use Search.");
         } finally {
           if (abortRef.current === ac) abortRef.current = null;
           setIsRefreshing(false);
