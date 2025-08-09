@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dual-Unit Weather (°F | °C)</title>
+  <style>
+    :root { --bg:#f5f6f8; --card:#fff; --muted:#6b7280; --text:#111827; --accent:#2563eb; --ring:rgba(37,99,235,.16); }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: linear-gradient(180deg, #f9fafb, #eef2f7 60%, #e5e7eb);
+      display: grid; place-items: center;
+    }
+    .card {
+      width: min(92vw, 680px);
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
+      padding: 20px 20px 16px;
+      border: 1px solid #e5e7eb;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+    }
+    header h1 {
+      font-size: 18px; margin: 0; font-weight: 600; letter-spacing: .2px;
+      display: flex; align-items: center; gap: .5ch;
+    }
+    header .sub {
+      color: var(--muted); font-weight: 500; font-size: 13px;
+    }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    button, input[type="text"] {
+      font: inherit;
+      border-radius: 10px; border: 1px solid #d1d5db; padding: 10px 12px;
+      background: #fff;
+    }
+    button {
+      cursor: pointer; user-select: none;
+      transition: transform .02s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 10px var(--ring); }
+    button:focus-visible, input[type="text"]:focus-visible { outline: 3px solid var(--ring); border-color: var(--accent); }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .linkish { background: transparent; border: none; color: var(--accent); padding: 6px 8px; }
+    .grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;
+      margin-top: 8px; margin-bottom: 6px;
+    }
+    .temp {
+      display: grid; place-items: center; text-align: center;
+      min-height: 120px;
+      padding: 8px 0;
+      border-radius: 12px; border: 1px dashed #e5e7eb;
+    }
+    .big {
+      font-size: clamp(40px, 8vw, 64px); font-weight: 700; letter-spacing: -0.5px;
+    }
+    .unit { font-size: .45em; color: var(--muted); margin-left: .2ch; }
+    .meta {
+      display: grid; gap: 6px; margin-top: 6px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .meta div { font-size: 14px; color: #374151; }
+    .row { display: flex; align-items: center; gap: 8px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .center { text-align: center; }
+    .status {
+      display: grid; place-items: center; padding: 18px; color: #374151;
+      min-height: 120px; border-radius: 12px; background: #fafafa; border: 1px solid #eee;
+    }
+    form.search {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px;
+    }
+    .spinner {
+      width: 18px; height: 18px; border: 2.5px solid #e5e7eb; border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 480px) {
+      header { align-items: start; gap: 6px; }
+      .meta { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <div id="root"></div>
+  </main>
+
+  <!-- React + Babel (JSX compiled in-browser) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useEffect, useRef, useState } = React;
+
+    // --- Weather code helpers (Open-Meteo / WMO) ---
+    const codeToLabel = (code) => {
+      if (code === 0) return "Clear sky";
+      if (code === 1) return "Mainly clear";
+      if (code === 2) return "Partly cloudy";
+      if (code === 3) return "Overcast";
+      if ([45,48].includes(code)) return "Fog";
+      if ([51,53,55].includes(code)) return "Drizzle";
+      if ([56,57].includes(code)) return "Freezing drizzle";
+      if ([61,63,65].includes(code)) return "Rain";
+      if ([66,67].includes(code)) return "Freezing rain";
+      if ([71,73,75].includes(code)) return "Snow";
+      if (code === 77) return "Snow grains";
+      if ([80,81,82].includes(code)) return "Rain showers";
+      if ([85,86].includes(code)) return "Snow showers";
+      if (code === 95) return "Thunderstorm";
+      if ([96,99].includes(code)) return "Thunderstorm w/ hail";
+      return "Unknown";
+    };
+    const codeToEmoji = (code) => {
+      if (code === 0) return "☀️";
+      if (code === 1) return "🌤️";
+      if (code === 2) return "⛅";
+      if (code === 3) return "☁️";
+      if ([45,48].includes(code)) return "🌫️";
+      if ([51,53,55,80,81,82].includes(code)) return "🌧️";
+      if ([61,63,65,66,67].includes(code)) return "🌧️";
+      if ([71,73,75,85,86,77].includes(code)) return "🌨️";
+      if ([95,96,99].includes(code)) return "⛈️";
+      return "🌡️";
+    };
+
+    const round = (n) => Math.round(n);
+    const cToF = (c) => Math.round((c * 9) / 5 + 32);
+
+    const formatPlace = (r) => {
+      if (!r) return "";
+      const parts = [r.name];
+      if (r.admin1 && r.admin1 !== r.name) parts.push(r.admin1);
+      if (r.country && !parts.includes(r.country)) parts.push(r.country);
+      return parts.filter(Boolean).join(", ");
+    };
+
+    function App() {
+      const [location, setLocation] = useState(null); // {lat, lon, name}
+      const [weather, setWeather] = useState(null);   // {c, feelsC, wind, code, time}
+      const [status, setStatus] = useState("idle");   // "idle" | "loading" | "ready" | "error"
+      const [message, setMessage] = useState("");
+      const [showSearch, setShowSearch] = useState(false);
+      const [query, setQuery] = useState("");
+      const [source, setSource] = useState(null);     // "geo" | "search"
+      const [isRefreshing, setIsRefreshing] = useState(false);
+
+      const reqIdRef = useRef(0);
+      const abortRef = useRef(null);
+      const lastSubmitRef = useRef(0);
+      const mountedRef = useRef(true);
+
+      useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+          mountedRef.current = false;
+          if (abortRef.current) abortRef.current.abort();
+        };
+      }, []);
+
+      // On mount: try geolocation if secure; otherwise show search.
+      useEffect(() => {
+        if (!window.isSecureContext || !("geolocation" in navigator)) {
+          setShowSearch(true);
+          setStatus("idle");
+          if (!window.isSecureContext) {
+            setMessage("Geolocation needs HTTPS. Search for a city instead.");
+          } else {
+            setMessage("Geolocation unavailable. Search for a city.");
+          }
+          return;
+        }
+        setMessage("Requesting location permission…");
+        setStatus("loading");
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            setSource("geo");
+            fetchAll(lat, lon, /*name*/ null);
+          },
+          (err) => {
+            setShowSearch(true);
+            setStatus("idle");
+            setMessage(err.code === 1
+              ? "Location access denied. Search for a city below."
+              : "Couldn't get your location. Try searching for a city.");
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      }, []);
+
+      // Fetch weather + (reverse) geocoded name
+      async function fetchAll(lat, lon, nameFromSearch) {
+        const myId = ++reqIdRef.current;
+        if (abortRef.current) abortRef.current.abort();
+        const ac = new AbortController();
+        abortRef.current = ac;
+
+        try {
+          setStatus("loading");
+          setMessage("Fetching current weather…");
+
+          // Reverse geocode if we don't already have a name
+          let placeName = nameFromSearch || "";
+          if (!placeName) {
+            const rev = await fetch(
+              `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`,
+              { signal: ac.signal }
+            ).then(r => r.json());
+            placeName = (rev && rev.results && rev.results.length) ? formatPlace(rev.results[0]) : "";
+          }
+
+          const wx = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,wind_speed_10m,weather_code&timezone=auto`,
+            { signal: ac.signal }
+          ).then(r => r.json());
+
+          if (reqIdRef.current !== myId || !mountedRef.current) return; // stale
+
+          const cur = wx?.current || {};
+          const data = {
+            c: Number(cur.temperature_2m),
+            feelsC: Number(cur.apparent_temperature),
+            wind: Number(cur.wind_speed_10m),
+            code: Number(cur.weather_code),
+            time: cur.time ? new Date(cur.time) : new Date()
+          };
+
+          setLocation({ lat, lon, name: placeName || "Your location" });
+          setWeather(data);
+          setStatus("ready");
+          setMessage("");
+        } catch (e) {
+          if (e.name === "AbortError") return;
+          setStatus("error");
+          setMessage("Couldn't fetch weather. Check your connection and try again.");
+        } finally {
+          if (abortRef.current === ac) abortRef.current = null;
+          setIsRefreshing(false);
+        }
+      }
+
+      async function onRefresh() {
+        if (!location) return;
+        setIsRefreshing(true);
+        await fetchAll(location.lat, location.lon, location.name);
+      }
+
+      async function onSearchSubmit(e) {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastSubmitRef.current < 800) return; // debounce
+        lastSubmitRef.current = now;
+
+        const q = query.trim();
+        if (!q) return;
+
+        const myId = ++reqIdRef.current;
+        if (abortRef.current) abortRef.current.abort();
+        const ac = new AbortController();
+        abortRef.current = ac;
+
+        try {
+          setStatus("loading");
+          setMessage(`Searching for “${q}”…`);
+          const geo = await fetch(
+            `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en`,
+            { signal: ac.signal }
+          ).then(r => r.json());
+
+          if (reqIdRef.current !== myId || !mountedRef.current) return; // stale
+
+          const first = geo?.results?.[0];
+          if (!first) {
+            setStatus("idle");
+            setMessage("No results for that place. Try a different spelling.");
+            return;
+          }
+          const placeName = formatPlace(first);
+          setSource("search");
+          setShowSearch(true);
+          await fetchAll(first.latitude, first.longitude, placeName);
+        } catch (e) {
+          if (e.name === "AbortError") return;
+          setStatus("error");
+          setMessage("Search failed. Please try again.");
+        } finally {
+          if (abortRef.current === ac) abortRef.current = null;
+        }
+      }
+
+      const canUseGeo = window.isSecureContext && "geolocation" in navigator;
+
+      return (
+        <section aria-live="polite">
+          <header>
+            <div>
+              <h1 id="title" title={location?.name || "Weather"}>
+                {weather ? codeToEmoji(weather.code) : "🌦️"}
+                {location?.name || "Weather"}
+              </h1>
+              <div className="sub">
+                {status === "ready" && weather && (
+                  <>
+                    {codeToLabel(weather.code)} • Updated {weather.time?.toLocaleString?.() || "just now"}
+                  </>
+                )}
+                {status !== "ready" && message}
+              </div>
+            </div>
+            <div className="controls">
+              {showSearch && (
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => setShowSearch((v) => !v)}
+                  aria-pressed={!showSearch}
+                >
+                  {showSearch ? "Hide search" : "Search city"}
+                </button>
+              )}
+              <button
+                type="button"
+                className="primary"
+                onClick={onRefresh}
+                disabled={!location || status === "loading" || isRefreshing}
+                aria-label="Refresh weather"
+                title="Refresh"
+              >
+                {isRefreshing || status === "loading" ? "Refreshing…" : "Refresh"}
+              </button>
+            </div>
+          </header>
+
+          {/* Main display */}
+          {status === "ready" && weather ? (
+            <>
+              <div className="grid" role="group" aria-label="Current temperature">
+                <div className="temp" aria-label="Temperature in Fahrenheit">
+                  <div className="big" aria-live="polite">
+                    {cToF(weather.c)}<span className="unit">°F</span>
+                  </div>
+                  <div className="muted">Feels like {cToF(weather.feelsC)}°F</div>
+                </div>
+                <div className="temp" aria-label="Temperature in Celsius">
+                  <div className="big" aria-live="polite">
+                    {round(weather.c)}<span className="unit">°C</span>
+                  </div>
+                  <div className="muted">Feels like {round(weather.feelsC)}°C</div>
+                </div>
+              </div>
+
+              <div className="meta" aria-label="Details">
+                <div className="row"><span>Condition:</span> <strong>{codeToEmoji(weather.code)} {codeToLabel(weather.code)}</strong></div>
+                <div className="row"><span>Wind:</span> <strong>{Number.isFinite(weather.wind) ? weather.wind : "—"} m/s</strong></div>
+                <div className="row"><span>Last updated:</span> <span className="muted">{weather.time?.toLocaleString?.() || "just now"}</span></div>
+                {location?.name && <div className="row"><span>Location:</span> <span className="muted">{location.name}</span></div>}
+              </div>
+            </>
+          ) : (
+            <div className="status" role="status" aria-live="polite">
+              {status === "loading" ? (
+                <div className="row center">
+                  <span className="spinner" aria-hidden="true"></span>
+                  <span>{message || "Loading…"}</span>
+                </div>
+              ) : status === "error" ? (
+                <div className="center">
+                  <p>{message || "Something went wrong."}</p>
+                  <button onClick={() => {
+                    if (location) onRefresh();
+                    else if (canUseGeo) {
+                      setMessage("Requesting location permission…");
+                      setStatus("loading");
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          const { latitude: lat, longitude: lon } = pos.coords;
+                          setSource("geo");
+                          fetchAll(lat, lon, null);
+                        },
+                        () => {
+                          setShowSearch(true);
+                          setStatus("idle");
+                          setMessage("Location failed. Try searching below.");
+                        }
+                      );
+                    } else {
+                      setShowSearch(true);
+                      setStatus("idle");
+                    }
+                  }}>Retry</button>
+                </div>
+              ) : (
+                <div className="center">
+                  <p className="muted">{message || "Ready."}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Search UI (shown when geolocation denied/unavailable, or toggled) */}
+          { (showSearch || !canUseGeo) && (
+            <div aria-label="Search for a city">
+              <form className="search" onSubmit={onSearchSubmit}>
+                <label htmlFor="city" className="visually-hidden" style={{position:'absolute',left:'-9999px'}}>City</label>
+                <input
+                  id="city"
+                  type="text"
+                  placeholder="Enter city (e.g., Paris)"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  inputMode="search"
+                  aria-label="City name"
+                  autoComplete="off"
+                />
+                <button type="submit" disabled={status === "loading"}>
+                  {status === "loading" ? "Searching…" : "Search"}
+                </button>
+              </form>
+              {canUseGeo && (
+                <div className="muted" style={{marginTop:8}}>
+                  Prefer automatic?{" "}
+                  <button className="linkish" type="button" onClick={() => {
+                    setMessage("Requesting location permission…");
+                    setStatus("loading");
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        const { latitude: lat, longitude: lon } = pos.coords;
+                        setSource("geo");
+                        fetchAll(lat, lon, null);
+                      },
+                      () => {
+                        setShowSearch(true);
+                        setStatus("idle");
+                        setMessage("Location access denied. Use search instead.");
+                      }
+                    );
+                  }}>Use my location</button>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
