@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-21T00:00:00Z",
+  "title": "Design System: Dual-Unit Weather",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": { "role": "primary", "displayName": "Signal Blue", "canonical": "#2563eb", "tonalRamp": ["#172554", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#bfdbfe", "#eff6ff"] },
+      "signal-ring": { "role": "primary", "displayName": "Signal Ring", "canonical": "rgba(37,99,235,.16)", "tonalRamp": ["rgba(37,99,235,.40)", "rgba(37,99,235,.32)", "rgba(37,99,235,.24)", "rgba(37,99,235,.16)", "rgba(37,99,235,.12)", "rgba(37,99,235,.08)", "rgba(37,99,235,.05)", "rgba(37,99,235,.03)"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#111827", "tonalRamp": ["#030712", "#111827", "#1f2937", "#374151", "#4b5563", "#9ca3af", "#e5e7eb", "#f9fafb"] },
+      "slate-text": { "role": "neutral", "displayName": "Slate Text", "canonical": "#374151", "tonalRamp": ["#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"] },
+      "muted-gray": { "role": "neutral", "displayName": "Muted Gray", "canonical": "#6b7280", "tonalRamp": ["#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f9fafb"] },
+      "card-white": { "role": "neutral", "displayName": "Card White", "canonical": "#ffffff", "tonalRamp": ["#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb", "#fcfcfd", "#fefefe", "#ffffff"] },
+      "mist-field": { "role": "neutral", "displayName": "Mist Field", "canonical": "#f5f6f8", "tonalRamp": ["#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#eef2f7", "#f5f6f8", "#f9fafb", "#fdfdfe"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#e5e7eb", "tonalRamp": ["#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#eef0f3", "#f3f4f6", "#f9fafb"] },
+      "control-stroke": { "role": "neutral", "displayName": "Control Stroke", "canonical": "#d1d5db", "tonalRamp": ["#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb"] },
+      "status-wash": { "role": "neutral", "displayName": "Status Wash", "canonical": "#fafafa", "tonalRamp": ["#737373", "#a3a3a3", "#d4d4d4", "#e5e5e5", "#eeeeee", "#f5f5f5", "#fafafa", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The two temperature readings only." },
+      "title": { "displayName": "Title", "purpose": "Place name, led by the condition emoji." },
+      "body": { "displayName": "Body", "purpose": "Base text, buttons and the search input." },
+      "detail": { "displayName": "Detail", "purpose": "Condition, wind, updated and location rows." },
+      "label": { "displayName": "Label", "purpose": "Subtitle line under the title; 'Feels like' lines use the same size." }
+    },
+    "shadows": [
+      { "name": "card-float", "value": "0 8px 30px rgba(0,0,0,.08)", "purpose": "The card, the only lifted surface." },
+      { "name": "primary-glow", "value": "0 2px 10px rgba(37,99,235,.16)", "purpose": "Soft glow under the primary button." }
+    ],
+    "motion": [
+      { "name": "control-ease", "value": "0.15s ease", "purpose": "Border-color and shadow transitions on buttons." },
+      { "name": "press", "value": "transform 0.02s ease", "purpose": "Near-instant press feedback on buttons." },
+      { "name": "spin", "value": "1s linear infinite", "purpose": "Loading spinner rotation." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "480px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single main action per screen (Refresh).",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Refresh</button>",
+      "css": ".ds-btn-primary { font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #2563eb; color: #fff; border: 1px solid #2563eb; border-radius: 10px; padding: 10px 12px; box-shadow: 0 2px 10px rgba(37,99,235,.16); cursor: pointer; transition: transform .02s ease, box-shadow .15s ease, border-color .15s ease; } .ds-btn-primary:hover { box-shadow: 0 4px 14px rgba(37,99,235,.24); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 3px solid rgba(37,99,235,.16); border-color: #2563eb; } .ds-btn-primary:disabled { opacity: .6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting actions such as Search submit and Retry.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\">Search</button>",
+      "css": ".ds-btn-secondary { font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #fff; color: #111827; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: transform .02s ease, box-shadow .15s ease, border-color .15s ease; } .ds-btn-secondary:hover { border-color: #9ca3af; } .ds-btn-secondary:active { transform: translateY(1px); } .ds-btn-secondary:focus-visible { outline: 3px solid rgba(37,99,235,.16); border-color: #2563eb; } .ds-btn-secondary:disabled { opacity: .6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Link Button",
+      "kind": "button",
+      "refersTo": "button-link",
+      "description": "Lightweight toggles and alternatives: Search / Hide search, Use my location.",
+      "html": "<button class=\"ds-btn-link\" type=\"button\">Use my location</button>",
+      "css": ".ds-btn-link { font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: transparent; color: #2563eb; border: none; border-radius: 10px; padding: 6px 8px; cursor: pointer; } .ds-btn-link:hover { text-decoration: underline; } .ds-btn-link:focus-visible { outline: 3px solid rgba(37,99,235,.16); }"
+    },
+    {
+      "name": "City Search",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Text field plus submit, used when geolocation is unavailable or toggled on.",
+      "html": "<form class=\"ds-search\" onsubmit=\"return false\"><input class=\"ds-input\" type=\"text\" placeholder=\"Enter city (e.g., Paris)\" aria-label=\"City name\"><button class=\"ds-search-btn\" type=\"submit\">Search</button></form>",
+      "css": ".ds-search { display: grid; grid-template-columns: 1fr auto; gap: 8px; } .ds-input, .ds-search-btn { font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; border-radius: 10px; border: 1px solid #d1d5db; padding: 10px 12px; background: #fff; color: #111827; } .ds-search-btn { cursor: pointer; transition: border-color .15s ease; } .ds-input:focus-visible, .ds-search-btn:focus-visible { outline: 3px solid rgba(37,99,235,.16); border-color: #2563eb; }"
+    },
+    {
+      "name": "Twin Dials",
+      "kind": "custom",
+      "refersTo": "dial",
+      "description": "The signature pair of equal temperature readings, °F and °C.",
+      "html": "<div class=\"ds-dials\"><div class=\"ds-dial\"><div class=\"ds-reading\">68<span class=\"ds-unit\">°F</span></div><div class=\"ds-feels\">Feels like 66°F</div></div><div class=\"ds-dial\"><div class=\"ds-reading\">20<span class=\"ds-unit\">°C</span></div><div class=\"ds-feels\">Feels like 19°C</div></div></div>",
+      "css": ".ds-dials { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; } .ds-dial { display: grid; place-items: center; text-align: center; min-height: 120px; padding: 8px 0; border-radius: 12px; border: 1px dashed #e5e7eb; } .ds-reading { font-size: clamp(40px, 8vw, 64px); font-weight: 700; letter-spacing: -0.5px; } .ds-unit { font-size: .45em; color: #6b7280; margin-left: .2ch; } .ds-feels { color: #6b7280; font-size: 13px; }"
+    },
+    {
+      "name": "Weather Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The single lifted container that holds the whole page.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">☀️ New York, NY</div><div class=\"ds-card-sub\">Clear sky • Updated just now</div></div>",
+      "css": ".ds-card { width: min(92vw, 680px); background: #fff; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.08); padding: 20px 20px 16px; border: 1px solid #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; } .ds-card-title { font-size: 18px; font-weight: 600; letter-spacing: .2px; } .ds-card-sub { color: #6b7280; font-size: 13px; font-weight: 500; }"
+    },
+    {
+      "name": "Status Panel",
+      "kind": "custom",
+      "refersTo": "status-panel",
+      "description": "Fills the dials' place while loading, on error, or before a location is chosen.",
+      "html": "<div class=\"ds-status\" role=\"status\"><span class=\"ds-spinner\" aria-hidden=\"true\"></span><span>Fetching current weather…</span></div>",
+      "css": ".ds-status { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px; min-height: 120px; border-radius: 12px; background: #fafafa; border: 1px solid #eee; color: #374151; font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; } .ds-spinner { width: 18px; height: 18px; border: 2.5px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: ds-spin 1s linear infinite; } @keyframes ds-spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .ds-spinner { animation-duration: 3s; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Twin Dial",
+    "overview": "The whole page is built around two equal readings, °F and °C, sitting side by side like a pair of gauges on one instrument. Everything else is in service of those two numbers: a small title row naming the place, a short line of details underneath, and controls tucked into the corner.\n\nThe feel is friendly and light. One white card floats on a soft gray field, corners are gently rounded, and a single weather emoji gives the page its warmth. Type is the visitor's own system font, so the page feels native on every device. Density is low: one card, one glance.\n\nSignal Blue is the one voice of action. It marks what can be pressed and where keyboard focus is, and nothing else.",
+    "keyCharacteristics": [
+      "Two identical temperature dials of equal weight; neither unit leads.",
+      "A single centered white card on a pale gray gradient field.",
+      "System font stack throughout; weight and size carry hierarchy, not typefaces.",
+      "One accent color, reserved for interaction.",
+      "Emoji as the only iconography."
+    ],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Signal Blue appears only on things you can press and on focus. Text, numbers, borders and decoration never use it.", "section": "colors" },
+      { "name": "The Readings Are Loudest Rule", "body": "Only the two temperatures use the Display size. Nothing else on the card is allowed to compete with them.", "section": "typography" },
+      { "name": "The Side-by-Side Rule", "body": "The °F and °C dials always share a row at equal width. They never stack, and they never resize independently.", "section": "layout" },
+      { "name": "The One Lift Rule", "body": "Only the card casts a shadow. Interior panels use borders or tint, never their own shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep °F and °C as two identical dials of equal size, weight and color.",
+      "Do reserve Signal Blue (#2563eb) for pressable things and focus, per the One Signal Rule.",
+      "Do use the system font stack and express hierarchy through size and weight.",
+      "Do keep radius growing with container size: 10px controls, 12px panels, 16px card.",
+      "Do show focus with the 3px Signal Ring outline on every interactive element."
+    ],
+    "donts": [
+      "Don't make one unit primary: no toggle, and no larger or brighter reading for either unit.",
+      "Don't add shadows to anything inside the card.",
+      "Don't use the Display size for anything except the two temperature readings.",
+      "Don't introduce a second accent color for decoration."
+    ]
+  }
+}
