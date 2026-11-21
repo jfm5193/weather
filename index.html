@@ -5,98 +5,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dual-Unit Weather (°F | °C)</title>
   <style>
-    :root { --bg:#f5f6f8; --card:#fff; --muted:#6b7280; --text:#111827; --accent:#2563eb; --ring:rgba(37,99,235,.16); }
+    :root {
+      --card:#fff; --muted:#6b7280; --text:#111827; --slate:#374151;
+      --accent:#2563eb; --ring:rgba(37,99,235,.16);
+      --hairline:#e5e7eb; --stroke:#d1d5db;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html, body { min-height: 100%; }
     body {
       margin: 0;
-      font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      font: 16px/1.45 var(--font);
       color: var(--text);
       background: linear-gradient(180deg, #f9fafb, #eef2f7 60%, #e5e7eb);
+      background-attachment: fixed;
       display: grid; place-items: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+      caret-color: var(--accent);
     }
+    ::selection { background: rgba(37,99,235,.18); }
     .card {
-      width: min(92vw, 680px);
+      width: min(100%, 720px);
       background: var(--card);
       border-radius: 16px;
       box-shadow: 0 8px 30px rgba(0,0,0,.08);
-      padding: 20px 20px 16px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--hairline);
+      padding: 24px 28px 28px;
     }
+
+    /* Header: place + one quiet control */
     header {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+      display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+      gap: 4px 16px;
     }
     header h1 {
       font-size: 18px; margin: 0; font-weight: 600; letter-spacing: .2px;
-      display: flex; align-items: center; gap: .5ch;
+      display: flex; align-items: center; gap: 8px;
+      min-width: 0; overflow-wrap: anywhere;
     }
-    header .sub {
-      color: var(--muted); font-weight: 500; font-size: 13px;
+    .sub {
+      color: var(--muted); font-weight: 500; font-size: 13px; margin-top: 2px;
+      display: flex; align-items: center; gap: 8px; min-height: 19px;
     }
-    .controls { display: flex; gap: 8px; align-items: center; }
-    .controls button { white-space: nowrap; }
+
+    /* Buttons & fields */
     button, input[type="text"] {
-      font: inherit;
-      border-radius: 10px; border: 1px solid #d1d5db; padding: 10px 12px;
+      font: inherit; color: inherit;
+      border-radius: 10px; border: 1px solid var(--stroke); padding: 10px 12px;
       background: #fff;
     }
-    button {
-      cursor: pointer; user-select: none;
-      transition: transform .02s ease, box-shadow .15s ease, border-color .15s ease;
-    }
+    button { cursor: pointer; user-select: none; transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
+    button:hover { border-color: #9ca3af; }
     button.primary { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 10px var(--ring); }
-    button:focus-visible, input[type="text"]:focus-visible { outline: 3px solid var(--ring); border-color: var(--accent); }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .linkish { background: transparent; border: none; color: var(--accent); padding: 6px 8px; }
-    .grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start;
-      margin-top: 8px; margin-bottom: 6px;
+    button.primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+    button:disabled { opacity: .6; cursor: not-allowed; box-shadow: none; }
+    .linkish {
+      background: transparent; border: none; color: var(--accent);
+      padding: 0 8px; min-height: 44px; margin: -10px -8px;
+      text-underline-offset: 3px;
     }
-    .temp {
-      display: grid; place-items: center; text-align: center;
-      min-height: 120px;
-      padding: 8px 0;
-      border-radius: 12px; border: 1px dashed #e5e7eb;
+    .linkish:hover { text-decoration: underline; }
+    button:focus-visible, input[type="text"]:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
     }
-    .big {
-      font-size: clamp(40px, 8vw, 64px); font-weight: 700; letter-spacing: -0.5px;
+    input[type="text"]:focus-visible { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    /* The twin dials: the page's one loud moment */
+    .dials {
+      display: grid; grid-template-columns: 1fr 1fr;
+      margin: 28px 0 4px;
+      transition: opacity .3s cubic-bezier(.16,1,.3,1);
     }
-    .unit { font-size: .45em; color: var(--muted); margin-left: .2ch; }
-    .meta {
-      display: grid; gap: 6px; margin-top: 6px;
-      grid-template-columns: 1fr 1fr;
+    .dials[aria-busy="true"] { opacity: .45; }
+    .dial { text-align: center; padding: 8px 8px 12px; min-width: 0; }
+    .dial + .dial { border-left: 1px solid var(--hairline); }
+    .reading {
+      font-size: clamp(64px, 17vw, 120px); font-weight: 700; line-height: 1;
+      letter-spacing: -0.035em; font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
-    .meta div { font-size: 14px; color: #374151; }
-    .row { display: flex; align-items: center; gap: 8px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .center { text-align: center; }
-    .status {
-      display: grid; place-items: center; padding: 18px; color: #374151;
-      min-height: 120px; border-radius: 12px; background: #fafafa; border: 1px solid #eee;
+    .dials.long .reading { font-size: clamp(50px, 13.5vw, 100px); }
+    .unit {
+      font-size: .34em; font-weight: 600; color: var(--muted); letter-spacing: 0;
+      vertical-align: top; position: relative; top: .3em; margin-left: .08em;
     }
-    form.search {
-      display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px;
+    .feels { color: var(--muted); font-size: 14px; margin-top: 12px; font-variant-numeric: tabular-nums; }
+
+    /* Messages that replace the dials only before there is any reading */
+    .placeholder {
+      min-height: 140px; margin: 28px 0 4px;
+      display: grid; place-items: center; align-content: center; gap: 16px;
+      text-align: center; color: var(--slate);
     }
+    .placeholder p { margin: 0; max-width: 40ch; }
+    .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 20px; align-items: center; }
+
+    .notice {
+      margin: 20px 0 0; font-size: 14px; color: var(--slate);
+      display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center;
+    }
+
+    /* Search */
+    .search-wrap { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--hairline); }
+    form.search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    form.search input { min-width: 0; width: 100%; }
+    .field-msg { margin: 8px 0 0; font-size: 14px; color: var(--slate); font-weight: 500; }
+    .choices { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 20px; }
+    .alt { margin-top: 12px; font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
+
     .spinner {
-      width: 18px; height: 18px; border: 2.5px solid #e5e7eb; border-top-color: var(--accent);
+      width: 14px; height: 14px; flex: none; border: 2px solid var(--hairline); border-top-color: var(--accent);
       border-radius: 50%; animation: spin 1s linear infinite;
     }
+    .placeholder .spinner { width: 20px; height: 20px; border-width: 2.5px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation-duration: 3s; }
+      .dials { transition: none; }
+    }
+
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+
     @media (max-width: 480px) {
-      header { align-items: start; gap: 6px; }
-      .meta { grid-template-columns: 1fr; }
+      body { padding: 16px; place-items: start center; }
+      .card { padding: 20px 16px 24px; }
+      .dials, .placeholder { margin-top: 24px; }
+      .dial { padding: 4px 4px 8px; }
+      .feels { font-size: 13px; }
     }
   </style>
 </head>
 <body>
-  <main class="card" role="main" aria-labelledby="title">
+  <main class="card" aria-labelledby="title">
     <div id="root"></div>
   </main>
 
-  <!-- React + Babel (JSX compiled in-browser) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React + Babel (JSX compiled in-browser), pinned versions -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
 
   <script type="text/babel" data-presets="env,react">
     const { useEffect, useRef, useState } = React;
@@ -117,8 +169,8 @@
       if ([80,81,82].includes(code)) return "Rain showers";
       if ([85,86].includes(code)) return "Snow showers";
       if (code === 95) return "Thunderstorm";
-      if ([96,99].includes(code)) return "Thunderstorm w/ hail";
-      return "Unknown";
+      if ([96,99].includes(code)) return "Thunderstorm with hail";
+      return "Unknown conditions";
     };
     const codeToEmoji = (code) => {
       if (code === 0) return "☀️";
@@ -138,355 +190,385 @@
 
     const round = (n) => Math.round(n);
     const cToF = (c) => Math.round((c * 9) / 5 + 32);
+    const fmt = (n) => (Number.isFinite(n) ? String(n).replace("-", "−") : "—");
 
     const formatPlace = (r) => {
       if (!r) return "";
       const name = r.name || r.city || r.locality || "";
       const cc = (r.country_code || r.countryCode || r.cc || "").toUpperCase();
       const admin = r.admin1 || r.principalSubdivision || "";
-      if (cc === "US" && admin && US_ABBR[admin]) {
-        return `${name}, ${US_ABBR[admin]}`;
-      }
+      if (cc === "US" && admin && US_ABBR[admin]) return `${name}, ${US_ABBR[admin]}`;
       if (cc) return `${name}, ${cc}`;
       return name;
     };
+    // A fuller label for telling same-named places apart in the choice list
+    const describePlace = (r) => {
+      const cc = (r.country_code || "").toUpperCase();
+      const parts = [r.name, cc === "US" && US_ABBR[r.admin1] ? US_ABBR[r.admin1] : r.admin1, cc !== "US" ? r.country : ""];
+      return parts.filter(Boolean).join(", ");
+    };
+
+    const relTime = (date, now) => {
+      if (!date) return "";
+      const mins = Math.round((now - date.getTime()) / 60000);
+      if (mins < 1) return "just now";
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return `${hrs} hr ago`;
+      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    };
+
+    // Remembered city (per browser). Wrapped: storage can be unavailable.
+    const SAVE_KEY = "dual-unit-weather:city";
+    const loadCity = () => { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); } catch { return null; } };
+    const saveCity = (c) => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(c)); } catch {} };
+
+    const STALE_MS = 10 * 60 * 1000;
 
     function App() {
       const [location, setLocation] = useState(null); // {lat, lon, name}
-      const [weather, setWeather] = useState(null);   // {c, feelsC, wind, code, time}
+      const [weather, setWeather] = useState(null);   // {c, feelsC, wind, code, time, fetchedAt}
       const [status, setStatus] = useState("idle");   // "idle" | "loading" | "ready" | "error"
-      const [message, setMessage] = useState("");
+      const [message, setMessage] = useState("");     // shown in place of the dials (no reading yet) or as a notice
       const [showSearch, setShowSearch] = useState(false);
       const [query, setQuery] = useState("");
-      const [source, setSource] = useState(null);     // "geo" | "search"
-      const [isRefreshing, setIsRefreshing] = useState(false);
+      const [searching, setSearching] = useState(false);
+      const [fieldMsg, setFieldMsg] = useState("");   // search feedback, shown under the field
+      const [choices, setChoices] = useState([]);     // ambiguous search results
+      const [now, setNow] = useState(Date.now());
+      const [announce, setAnnounce] = useState("");
 
       const reqIdRef = useRef(0);
       const abortRef = useRef(null);
-      const lastSubmitRef = useRef(0);
       const mountedRef = useRef(true);
+      const inputRef = useRef(null);
+      const weatherRef = useRef(null);
+      const locationRef = useRef(null);
+      weatherRef.current = weather;
+      locationRef.current = location;
+
+      const canUseGeo = window.isSecureContext && "geolocation" in navigator;
 
       useEffect(() => {
         mountedRef.current = true;
-        return () => {
-          mountedRef.current = false;
-          if (abortRef.current) abortRef.current.abort();
-        };
+        return () => { mountedRef.current = false; if (abortRef.current) abortRef.current.abort(); };
       }, []);
 
-      // On mount: try geolocation if secure; otherwise show search.
+      // Keep "Updated … ago" honest, and quietly re-fetch when the tab comes back after a while.
       useEffect(() => {
-        if (!window.isSecureContext || !("geolocation" in navigator)) {
-          setShowSearch(true);
-          setStatus("idle");
-          if (!window.isSecureContext) {
-            setMessage("Geolocation needs HTTPS. Search for a city instead.");
-          } else {
-            setMessage("Geolocation unavailable. Search for a city.");
-          }
-          return;
-        }
-        setMessage("Requesting location permission…");
+        const t = setInterval(() => setNow(Date.now()), 30000);
+        const onVis = () => {
+          if (document.visibilityState !== "visible") return;
+          setNow(Date.now());
+          const w = weatherRef.current, l = locationRef.current;
+          if (w && l && Date.now() - w.fetchedAt > STALE_MS) fetchAll(l.lat, l.lon, l.name);
+        };
+        document.addEventListener("visibilitychange", onVis);
+        return () => { clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
+      }, []);
+
+      // "/" focuses the city search
+      useEffect(() => {
+        const onKey = (e) => {
+          if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+          const tag = (e.target.tagName || "").toLowerCase();
+          if (tag === "input" || tag === "textarea") return;
+          e.preventDefault();
+          openSearch();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+      }, []);
+
+      function openSearch() {
+        setShowSearch(true);
+        setTimeout(() => inputRef.current && inputRef.current.focus(), 0);
+      }
+
+      function showPrompt(text) {
+        setShowSearch(true);
+        setStatus("idle");
+        setMessage(text);
+        setAnnounce(text);
+      }
+
+      function locateMe(fallbackText) {
         setStatus("loading");
+        setMessage("Finding your location…");
         navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude: lat, longitude: lon } = pos.coords;
-            setSource("geo");
-            fetchAll(lat, lon, /*name*/ null);
-          },
+          (pos) => fetchAll(pos.coords.latitude, pos.coords.longitude, null),
           (err) => {
-            setShowSearch(true);
-            setStatus("idle");
-            setMessage(err.code === 1
-              ? "Location access denied. Search for a city below."
-              : "Couldn't get your location. Try searching for a city.");
+            const saved = loadCity();
+            if (saved && !weatherRef.current) { fetchAll(saved.lat, saved.lon, saved.name); setShowSearch(false); return; }
+            if (weatherRef.current) { setStatus("ready"); setMessage(""); setFieldMsg(err.code === 1 ? "Location is off for this site. Search for a city instead." : "Couldn't find your location. Search for a city instead."); setShowSearch(true); return; }
+            showPrompt(fallbackText || (err.code === 1
+              ? "Location is off for this site. Search for a city to see its weather."
+              : "Couldn't find your location. Search for a city to see its weather."));
           },
           { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
         );
+      }
+
+      // On mount: ?city= link first, then geolocation, then a remembered city, then search.
+      useEffect(() => {
+        const cityParam = new URLSearchParams(window.location.search).get("city");
+        if (cityParam) { setQuery(cityParam); runSearch(cityParam); return; }
+        if (canUseGeo) { locateMe(); return; }
+        const saved = loadCity();
+        if (saved) { fetchAll(saved.lat, saved.lon, saved.name); return; }
+        showPrompt(window.isSecureContext
+          ? "This browser can't share your location. Search for a city to see its weather."
+          : "Location needs a secure (https) page. Search for a city to see its weather.");
       }, []);
 
-      // Fetch weather + (reverse) geocoded name (robust to geocoding CORS/outages)
+      // Fetch weather + reverse-geocoded name. The last good reading stays on screen while this runs.
       async function fetchAll(lat, lon, nameFromSearch) {
         const myId = ++reqIdRef.current;
         if (abortRef.current) abortRef.current.abort();
         const ac = new AbortController();
         abortRef.current = ac;
+        const hadReading = !!weatherRef.current;
+        setStatus("loading");
+        if (!hadReading) setMessage("Getting the current weather…");
 
         try {
-          setStatus("loading");
-          setMessage("Fetching current weather…");
-
-          // Start reverse geocoding in parallel but don't block weather on it
           const reversePromise = (async () => {
             if (nameFromSearch) return nameFromSearch;
-            // Try Open‑Meteo reverse geocoding first
-            const tryOpenMeteo = async () => {
-              const r = await fetch(
-                `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`,
-                { signal: ac.signal, mode: "cors", cache: "no-store" }
-              );
-              if (!r.ok) throw new Error("open-meteo reverse failed");
-              const j = await r.json();
-              return (j && j.results && j.results.length) ? formatPlace(j.results[0]) : "";
-            };
-            // Fallback: BigDataCloud (no key, permissive CORS)
-            const tryBDC = async () => {
-              const r = await fetch(
-                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
-                { signal: ac.signal, mode: "cors", cache: "no-store" }
-              );
-              if (!r.ok) throw new Error("bdc reverse failed");
-              const b = await r.json();
-              const city = b.city || b.locality || "";
-              const code = (b.principalSubdivisionCode || b.isoPrincipalSubdivision || "").split("-").pop() || b.countryCode || "";
-              return [city, code].filter(Boolean).join(", ");
-            };
-
             try {
-              const name = await tryOpenMeteo();
-              if (name) return name;
+              const r = await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=en`, { signal: ac.signal, mode: "cors", cache: "no-store" });
+              if (r.ok) { const j = await r.json(); const n = j?.results?.length ? formatPlace(j.results[0]) : ""; if (n) return n; }
             } catch {}
             try {
-              return await tryBDC();
+              const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`, { signal: ac.signal, mode: "cors", cache: "no-store" });
+              if (r.ok) {
+                const b = await r.json();
+                const city = b.city || b.locality || "";
+                const code = (b.principalSubdivisionCode || b.isoPrincipalSubdivision || "").split("-").pop() || b.countryCode || "";
+                return [city, code].filter(Boolean).join(", ");
+              }
             } catch {}
-            return ""; // ignore reverse errors (CORS etc.)
+            return "";
           })();
 
-          // Weather fetch (must succeed)
           const wxResp = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,wind_speed_10m,weather_code&timezone=auto`,
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,wind_speed_10m,weather_code&wind_speed_unit=ms&timezone=auto`,
             { signal: ac.signal, mode: "cors", cache: "no-store" }
           );
+          if (!wxResp.ok) throw new Error("weather " + wxResp.status);
           const wx = await wxResp.json();
-
           if (reqIdRef.current !== myId || !mountedRef.current) return; // stale
 
           const cur = wx?.current || {};
+          const c = Number(cur.temperature_2m);
+          if (!Number.isFinite(c)) throw new Error("no temperature");
+          // Open-Meteo gives the location's local time without a zone; convert to a real instant.
+          const offset = Number(wx?.utc_offset_seconds) || 0;
+          const parsed = cur.time ? Date.parse(cur.time + "Z") - offset * 1000 : NaN;
           const data = {
-            c: Number(cur.temperature_2m),
+            c,
             feelsC: Number(cur.apparent_temperature),
             wind: Number(cur.wind_speed_10m),
             code: Number(cur.weather_code),
-            time: cur.time ? new Date(cur.time) : new Date()
+            time: Number.isFinite(parsed) ? new Date(Math.min(parsed, Date.now())) : new Date(),
+            fetchedAt: Date.now()
           };
-
           const placeName = (await reversePromise) || "Your location";
-
+          if (reqIdRef.current !== myId || !mountedRef.current) return;
           setLocation({ lat, lon, name: placeName });
           setWeather(data);
+          setNow(Date.now());
           setStatus("ready");
           setMessage("");
+          setAnnounce(`${placeName}: ${fmt(cToF(c))} degrees Fahrenheit, ${fmt(round(c))} degrees Celsius, ${codeToLabel(data.code).toLowerCase()}.`);
+          if (nameFromSearch) saveCity({ lat, lon, name: placeName });
         } catch (e) {
           if (e.name === "AbortError") return;
+          if (reqIdRef.current !== myId || !mountedRef.current) return;
           setStatus("error");
-          setMessage("Couldn't fetch weather (network blocked?). Try again or use Search.");
+          const text = hadReading
+            ? "Couldn't update. Showing the last reading."
+            : "Couldn't reach the weather service. Check your connection and try again.";
+          setMessage(text);
+          setAnnounce(text);
         } finally {
           if (abortRef.current === ac) abortRef.current = null;
-          setIsRefreshing(false);
         }
       }
 
-      async function onRefresh() {
-        if (!location) return;
-        setIsRefreshing(true);
-        await fetchAll(location.lat, location.lon, location.name);
-      }
-
-      async function onSearchSubmit(e) {
-        e.preventDefault();
-        const now = Date.now();
-        if (now - lastSubmitRef.current < 800) return; // debounce
-        lastSubmitRef.current = now;
-
-        const q = query.trim();
-        if (!q) return;
-
-        const myId = ++reqIdRef.current;
+      async function runSearch(raw) {
+        const q = (raw ?? query).trim();
+        if (!q) { setFieldMsg("Type a city name first."); inputRef.current?.focus(); return; }
         if (abortRef.current) abortRef.current.abort();
         const ac = new AbortController();
         abortRef.current = ac;
-
+        setSearching(true);
+        setFieldMsg("");
+        setChoices([]);
         try {
-          setStatus("loading");
-          setMessage(`Searching for “${q}”…`);
-          const geo = await fetch(
-            `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en`,
-            { signal: ac.signal }
-          ).then(r => r.json());
-
-          if (reqIdRef.current !== myId || !mountedRef.current) return; // stale
-
-          const first = geo?.results?.[0];
-          if (!first) {
-            setStatus("idle");
-            setMessage("No results for that place. Try a different spelling.");
+          const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en`, { signal: ac.signal });
+          if (!r.ok) throw new Error("search " + r.status);
+          const geo = await r.json();
+          if (!mountedRef.current) return;
+          const results = geo?.results || [];
+          if (!results.length) {
+            setFieldMsg(`No place called “${q}” found. Check the spelling or try a nearby city.`);
+            setAnnounce(`No place called ${q} found.`);
+            if (!weatherRef.current) setStatus("idle");
+            setShowSearch(true);
             return;
           }
-          const placeName = formatPlace(first);
-          setSource("search");
-          setShowSearch(true);
-          await fetchAll(first.latitude, first.longitude, placeName);
+          // Same name in several places: let the user pick instead of guessing.
+          const sameName = results.filter((x) => x.name?.toLowerCase() === results[0].name?.toLowerCase());
+          if (sameName.length > 1) {
+            setChoices(sameName.slice(0, 4));
+            setFieldMsg(`More than one “${results[0].name}”. Which one?`);
+            setAnnounce(`More than one ${results[0].name}. Choose one.`);
+            setShowSearch(true);
+            return;
+          }
+          await choose(results[0]);
         } catch (e) {
           if (e.name === "AbortError") return;
-          setStatus("error");
-          setMessage("Search failed. Please try again.");
+          setFieldMsg("Search didn't go through. Check your connection and try again.");
         } finally {
+          if (mountedRef.current) setSearching(false);
           if (abortRef.current === ac) abortRef.current = null;
         }
       }
 
-      const canUseGeo = window.isSecureContext && "geolocation" in navigator;
+      async function choose(place) {
+        setChoices([]);
+        setFieldMsg("");
+        setShowSearch(false);
+        setQuery("");
+        await fetchAll(place.latitude, place.longitude, formatPlace(place));
+      }
+
+      function onSearchSubmit(e) {
+        e.preventDefault();
+        runSearch();
+      }
+
+      function retry() {
+        if (location) fetchAll(location.lat, location.lon, location.name);
+        else if (canUseGeo) locateMe();
+        else openSearch();
+      }
+
+      const ready = !!weather;
+      const busy = status === "loading" || searching;
+      // Before there is any reading, search is the way forward: keep it open (except mid-load).
+      const searchOpen = showSearch || (!ready && status === "idle");
 
       return (
-        <section aria-live="polite">
+        <section>
           <header>
-            <div>
-              <h1 id="title" title={location?.name || "Weather"}>
-                {weather ? codeToEmoji(weather.code) : "🌦️"}
-                {location?.name || "Weather"}
+            <div style={{ minWidth: 0 }}>
+              <h1 id="title">
+                <span aria-hidden="true">{weather ? codeToEmoji(weather.code) : "🌦️"}</span>
+                <span>{location?.name || "Weather"}</span>
               </h1>
               <div className="sub">
-                {status === "ready" && weather && (
-                  <>
-                    {codeToLabel(weather.code)} • Updated {weather.time?.toLocaleString?.() || "just now"}
-                  </>
+                {ready && (
+                  <span title={weather.time.toLocaleString()}>
+                    {codeToLabel(weather.code)} · Wind {Number.isFinite(weather.wind) ? weather.wind.toFixed(1) : "—"} m/s · Updated {relTime(weather.time, now)}
+                  </span>
                 )}
-                {status !== "ready" && message}
+                {ready && busy && <span className="spinner" aria-hidden="true"></span>}
               </div>
             </div>
-            <div className="controls">
+            {ready && (
               <button
                 type="button"
                 className="linkish"
-                onClick={() => setShowSearch((v) => !v)}
-                aria-pressed={showSearch}
+                onClick={() => (showSearch ? setShowSearch(false) : openSearch())}
+                aria-expanded={searchOpen}
+                aria-controls="search-panel"
               >
-                {showSearch ? "Hide search" : "Search"}
+                {searchOpen ? "Close" : "Change city"}
               </button>
-              <button
-                type="button"
-                className="primary"
-                onClick={onRefresh}
-                disabled={!location || status === "loading" || isRefreshing}
-                aria-label="Refresh weather"
-                title="Refresh"
-              >
-                {isRefreshing || status === "loading" ? "Refreshing…" : "Refresh"}
-              </button>
-            </div>
+            )}
           </header>
 
-          {/* Main display */}
-          {status === "ready" && weather ? (
+          {ready ? (
             <>
-              <div className="grid" role="group" aria-label="Current temperature">
-                <div className="temp" aria-label="Temperature in Fahrenheit">
-                  <div className="big" aria-live="polite">
-                    {cToF(weather.c)}<span className="unit">°F</span>
-                  </div>
-                  <div className="muted">Feels like {cToF(weather.feelsC)}°F</div>
+              <div className={"dials" + (Math.max(fmt(cToF(weather.c)).length, fmt(round(weather.c)).length) >= 3 ? " long" : "")} aria-busy={busy ? "true" : "false"}>
+                <div className="dial" role="group" aria-label="Fahrenheit">
+                  <div className="reading">{fmt(cToF(weather.c))}<span className="unit">°F</span></div>
+                  <div className="feels">Feels like {fmt(cToF(weather.feelsC))}°F</div>
                 </div>
-                <div className="temp" aria-label="Temperature in Celsius">
-                  <div className="big" aria-live="polite">
-                    {round(weather.c)}<span className="unit">°C</span>
-                  </div>
-                  <div className="muted">Feels like {round(weather.feelsC)}°C</div>
+                <div className="dial" role="group" aria-label="Celsius">
+                  <div className="reading">{fmt(round(weather.c))}<span className="unit">°C</span></div>
+                  <div className="feels">Feels like {fmt(round(weather.feelsC))}°C</div>
                 </div>
               </div>
-
-              <div className="meta" aria-label="Details">
-                <div className="row"><span>Condition:</span> <strong>{codeToEmoji(weather.code)} {codeToLabel(weather.code)}</strong></div>
-                <div className="row"><span>Wind:</span> <strong>{Number.isFinite(weather.wind) ? weather.wind : "—"} m/s</strong></div>
-                <div className="row"><span>Last updated:</span> <span className="muted">{weather.time?.toLocaleString?.() || "just now"}</span></div>
-                {location?.name && <div className="row"><span>Location:</span> <span className="muted">{location.name}</span></div>}
-              </div>
+              {status === "error" && (
+                <p className="notice">
+                  <span>{message}</span>
+                  <button type="button" className="linkish" onClick={retry}>Try again</button>
+                </p>
+              )}
             </>
           ) : (
-            <div className="status" role="status" aria-live="polite">
+            <div className="placeholder">
               {status === "loading" ? (
-                <div className="row center">
-                  <span className="spinner" aria-hidden="true"></span>
-                  <span>{message || "Loading…"}</span>
-                </div>
-              ) : status === "error" ? (
-                <div className="center">
-                  <p>{message || "Something went wrong."}</p>
-                  <div className="row" style={{justifyContent:'center', gap: '8px'}}>
-                    <button onClick={() => {
-                      if (location) onRefresh();
-                      else if (canUseGeo) {
-                        setMessage("Requesting location permission…");
-                        setStatus("loading");
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            const { latitude: lat, longitude: lon } = pos.coords;
-                            setSource("geo");
-                            fetchAll(lat, lon, null);
-                          },
-                          () => {
-                            setShowSearch(true);
-                            setStatus("idle");
-                            setMessage("Location failed. Try searching below.");
-                          }
-                        );
-                      } else {
-                        setShowSearch(true);
-                        setStatus("idle");
-                      }
-                    }}>Retry</button>
-                    <button type="button" className="linkish" onClick={() => { setShowSearch(true); setStatus("idle"); }}>Search for a city</button>
-                  </div>
-                </div>
+                <div className="actions"><span className="spinner" aria-hidden="true"></span><span>{message || "Loading…"}</span></div>
               ) : (
-                <div className="center">
-                  <p className="muted">{message || "Ready."}</p>
+                <>
+                  <p>{message || "Search for a city to see its weather."}</p>
+                  {status === "error" && (
+                    <div className="actions">
+                      <button type="button" onClick={retry}>Try again</button>
+                      {!searchOpen && <button type="button" className="linkish" onClick={openSearch}>Search for a city</button>}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {searchOpen && (
+            <div className="search-wrap" id="search-panel">
+              <form className="search" onSubmit={onSearchSubmit} role="search">
+                <label htmlFor="city" className="visually-hidden">City</label>
+                <input
+                  id="city"
+                  ref={inputRef}
+                  type="text"
+                  placeholder="City, e.g. Paris"
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); if (fieldMsg) setFieldMsg(""); }}
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  aria-describedby={fieldMsg ? "city-msg" : undefined}
+                  aria-invalid={fieldMsg && !choices.length ? "true" : undefined}
+                />
+                <button type="submit" className="primary" disabled={searching}>
+                  {searching ? "Searching…" : "Search"}
+                </button>
+              </form>
+              {fieldMsg && <p className="field-msg" id="city-msg">{fieldMsg}</p>}
+              {choices.length > 0 && (
+                <ul className="choices">
+                  {choices.map((p) => (
+                    <li key={p.id || `${p.latitude},${p.longitude}`}>
+                      <button type="button" className="linkish" onClick={() => choose(p)}>{describePlace(p)}</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canUseGeo && (
+                <div className="alt">
+                  <span>Or</span>
+                  <button className="linkish" type="button" onClick={() => { setShowSearch(false); setFieldMsg(""); locateMe(); }}>
+                    use my location
+                  </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Search UI (shown when geolocation denied/unavailable, or toggled) */}
-          { (showSearch || !canUseGeo) && (
-            <div aria-label="Search for a city">
-              <form className="search" onSubmit={onSearchSubmit}>
-                <label htmlFor="city" className="visually-hidden" style={{position:'absolute',left:'-9999px'}}>City</label>
-                <input
-                  id="city"
-                  type="text"
-                  placeholder="Enter city (e.g., Paris)"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  inputMode="search"
-                  aria-label="City name"
-                  autoComplete="off"
-                />
-                <button type="submit" disabled={status === "loading"}>
-                  {status === "loading" ? "Searching…" : "Search"}
-                </button>
-              </form>
-              {canUseGeo && (
-                <div className="muted" style={{marginTop:8}}>
-                  Prefer automatic?{" "}
-                  <button className="linkish" type="button" onClick={() => {
-                    setMessage("Requesting location permission…");
-                    setStatus("loading");
-                    navigator.geolocation.getCurrentPosition(
-                      (pos) => {
-                        const { latitude: lat, longitude: lon } = pos.coords;
-                        setSource("geo");
-                        fetchAll(lat, lon, null);
-                      },
-                      () => {
-                        setShowSearch(true);
-                        setStatus("idle");
-                        setMessage("Location access denied. Use search instead.");
-                      }
-                    );
-                  }}>Use my location</button>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="visually-hidden" role="status" aria-live="polite">{announce}</div>
         </section>
       );
     }
